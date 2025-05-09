@@ -1,0 +1,15 @@
+@import "primeicons/primeicons.css";
+
+body {
+    background-color: rgb(56, 56, 56);
+}
+
+.unread-badge {
+    border-radius: 50% !important;
+    /* force perfect circle */
+}
+
+.add-user-btn {
+    border-radius: 10px !important;
+    /* keep it square-rounded */
+}
