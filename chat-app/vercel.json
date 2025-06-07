@@ -2,10 +2,10 @@
   "version": 2,
   "builds": [
     {
-      "src": "package.json",
+      "src": "chat-app/package.json",
       "use": "@vercel/static-build",
       "config": {
-        "distDir": "dist/chat-app"
+        "distDir": "chat-app/dist/chat-app"
       }
     }
   ],
