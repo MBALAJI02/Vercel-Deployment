@@ -2,6 +2,7 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
+require('dotenv').config();
 
 const app = express();
 app.use(cors());
@@ -55,7 +56,7 @@ io.on('connection', (socket) => {
   });
 });
 
-const PORT = 4000;
+const PORT = process.env.WEBSOCKET_PORT;
 server.listen(PORT, () => {
   console.log(`WebSocket Server running at http://localhost:${PORT}`);
 });

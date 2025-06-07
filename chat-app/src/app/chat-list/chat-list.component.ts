@@ -1,9 +1,11 @@
 import { CommonModule } from '@angular/common';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
-import { ChangeDetectorRef, Component, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectorRef, Component, EventEmitter, Output, ViewEncapsulation } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NavigationEnd, Router } from '@angular/router';
 import { io, Socket } from 'socket.io-client';
+import { ChatService } from '../chat.service';
+import { WebsocketService } from '../websocket.service';
 
 @Component({
   selector: 'app-chat-list',
@@ -11,9 +13,10 @@ import { io, Socket } from 'socket.io-client';
   imports: [CommonModule, FormsModule, HttpClientModule],
   templateUrl: './chat-list.component.html',
   styleUrls: ['./chat-list.component.css'],
-  encapsulation: ViewEncapsulation.Emulated 
+  encapsulation: ViewEncapsulation.Emulated
 })
 export class ChatListComponent {
+  @Output() userSelected = new EventEmitter<string>();
   users: string[] = [];
   username: string | null = ''
   showSearchInput = false;
@@ -27,11 +30,13 @@ export class ChatListComponent {
   constructor(
     private router: Router,
     private http: HttpClient,
-    private cdRef: ChangeDetectorRef
+    private cdRef: ChangeDetectorRef,
+    private chatService: ChatService,
+    private webSocket: WebsocketService
   ) { }
 
   ngOnInit() {
-    this.socket = io('http://localhost:4000');
+    this.socket = io(this.webSocket.socket_connection);
 
     this.username = localStorage.getItem('username');
     if (!this.username) {
@@ -40,33 +45,20 @@ export class ChatListComponent {
     }
 
     this.router.events.subscribe(event => {
-      if (event instanceof NavigationEnd && this.router.url === '/chat-list') {
-        this.fetchUserFromDb();
+      if (event instanceof NavigationEnd && this.router.url == '/chat-list') {
+        this.fetchMessagedUserFromDb();
       }
-    });
-    
+    });    
 
-    this.socket.on('new_message_sent', (data) => {
-      if (data.to == this.loggedInUsername && !this.users.includes(data.from)) {
-        this.users.unshift(data.from);  // Add to chat list at top
-        this.unreadMessages[data.from] = {
-          count: 0,
-          lastMessage: data.message,
-          lastMessageTime: data.timestamp
-        };
-        this.cdRef.detectChanges();
-      }
-    });
-    
-
-    this.liveTypingAction()
-    this.fetchUserFromDb();
+    this.newMesageSentAction();
+    this.liveTypingAction();
+    this.fetchMessagedUserFromDb();
     this.liveUnreadCountAction();
     this.fetchUnreadMessages();
   }
 
-  fetchUserFromDb() {
-    this.http.get<string[]>(`http://localhost:3000/get-messaged-users/${this.username}`)
+  fetchMessagedUserFromDb() {
+    this.http.get<string[]>(this.chatService.Service_getMessagedUser +'/'+ this.username)
       .subscribe(
         res => this.users = res,
         err => console.error('Error fetching users:', err)
@@ -74,11 +66,11 @@ export class ChatListComponent {
   }
 
   fetchUnreadMessages() {
-    this.http.get<{ username: string, count: number, lastMessageTime: Date, lastMessage: string }[]>('http://localhost:3000/get-unread-messages/' + this.username)
+    this.http.get<{ username: string, count: number, lastMessageTime: Date, lastMessage: string }[]>(this.chatService.Service_getUnreadMessage +'/'+ this.username)
       .subscribe((unreadMessages) => {
         unreadMessages.forEach((message) => {
           this.unreadMessages[message.username] = { count: message.count, lastMessageTime: message.lastMessageTime, lastMessage: message.lastMessage };
-          console.log("unreadMessages::::::::::::",this.unreadMessages[message.username] )
+          console.log("unreadMessages::::::::::::", this.unreadMessages[message.username])
         });
       });
   }
@@ -90,26 +82,26 @@ export class ChatListComponent {
     return 0;
   }
 
-  getMessageTime(user: string){
+  getMessageTime(user: string) {
     if (this.unreadMessages && this.unreadMessages[user]) {
       return this.unreadMessages[user].lastMessageTime;
-    } 
+    }
     return 0;
-   
+
   }
 
   getLastMessage(user: string) {
     if (this.unreadMessages && this.unreadMessages[user]) {
-      return this.unreadMessages[user].lastMessage;      
+      return this.unreadMessages[user].lastMessage;
     }
     return 0;
   }
-  
+
 
 
   searchUser() {
     if (this.searchQuery.length > 0) {
-      this.http.post<any[]>('http://localhost:3000/search-user', { query: this.searchQuery }).subscribe(
+      this.http.post<any[]>(this.chatService.Service_searchUser, { query: this.searchQuery }).subscribe(
         (res) => this.searchedUsers = res,
         (err) => console.error('Search error:', err)
       );
@@ -120,26 +112,32 @@ export class ChatListComponent {
 
   sendMessageTo(user: string, message: string) {
     if (!message.trim()) return;
-
     const currentUser = this.loggedInUsername;
-
-    this.http.post('http://localhost:3000/send-message', {
-      from: currentUser,
-      to: user,
-      message: message
-    }).subscribe(
-      () => {
-
-      },
+    this.http.post(this.chatService.Service_sendMessage, {from: currentUser, to: user, message: message }).subscribe(
+      () => { },
       (err) => console.error('Message send error:', err)
     );
+  }
+
+  newMesageSentAction(){
+    this.socket.on('new_message_sent', (data) => {
+      if (data.to == this.loggedInUsername && !this.users.includes(data.from)) {
+        this.users.unshift(data.from); 
+        this.unreadMessages[data.from] = {
+          count: 0,
+          lastMessage: data.message,
+          lastMessageTime: data.timestamp
+        };
+        this.cdRef.detectChanges();
+      }
+    });
   }
 
 
   liveTypingAction() {
     this.socket.on('user_typing_chatList', (data) => {
       if (data.to == this.loggedInUsername) {
-        this.typingStatus[data.from] = true;    
+        this.typingStatus[data.from] = true;
         setTimeout(() => {
           this.typingStatus[data.from] = false;
         }, 1000);
@@ -147,35 +145,36 @@ export class ChatListComponent {
     });
   }
 
-  liveUnreadCountAction(){
+  liveUnreadCountAction() {
     this.socket.on('update_unread', (data) => {
       const sender = data.from;
       const currentTime = new Date();
 
-      if (data.to == this.loggedInUsername){
+      if (data.to == this.loggedInUsername) {
         if (this.unreadMessages[sender]) {
           this.unreadMessages[sender].count += 1;
           this.unreadMessages[sender].lastMessageTime = currentTime;
-          this.unreadMessages[sender].lastMessage = data.message;          
+          this.unreadMessages[sender].lastMessage = data.message;
         } else {
           this.unreadMessages[sender] = {
             count: 1,
-            lastMessageTime: new Date(),
+            lastMessageTime: new Date(), 
             lastMessage: data.message
           };
         }
-         this.cdRef.detectChanges();
-      }      
+        this.cdRef.detectChanges();
+      }
     });
   }
 
   openConversation(username: string) {
-    this.http.post('http://localhost:3000/mark-messages-read', {
-      from: this.username,
-      to: username
-    }, { responseType: 'text' }).subscribe(() => {
+    this.http.post(this.chatService.Service_markMessagesRead, {from: this.username, to: username}, { responseType: 'text' }).subscribe(() => {
       this.unreadMessages[username] = { count: 0, lastMessageTime: new Date(), lastMessage: '' };
-      this.router.navigate(['/chat-conversation', username]);
+      if (window.innerWidth < 573) {
+        this.router.navigate(['/chat-conversation', username]);
+      } else {
+        this.userSelected.emit(username);
+      }
     });
   }
 

@@ -3,6 +3,7 @@ import { Component } from '@angular/core';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { ChatService } from '../chat.service';
 
 @Component({
   selector: 'app-login',
@@ -21,7 +22,8 @@ export class LoginComponent {
 
   constructor(
       private http: HttpClient,
-      private router: Router
+      private router: Router,
+      private chatService: ChatService,
   
     ) {}
   
@@ -36,12 +38,16 @@ export class LoginComponent {
 
   nextAction() {
     if (!this.isUserNameMode) {
-      this.http.post<any>('http://localhost:3000/check-contact', { contact: this.contact }).subscribe((res) => {
+      this.http.post<any>(this.chatService.Service_checkContact, { contact: this.contact }).subscribe((res) => {
         if (res.username) {
           localStorage.setItem('username', res.username);
           this.validationMessage = ''; 
           this.isValidUserId = false;
-          this.router.navigate(['/chat-list']);
+          if (window.innerWidth < 573) {
+            this.router.navigate(['/chat-list']);
+          } else {
+            this.router.navigate(['/chat']);
+          }
         } else {
           this.validationMessage = '';  
         this.isValidUserId = false;         
@@ -51,12 +57,16 @@ export class LoginComponent {
         alert('Invalid Contact');
       });
     } else {
-      this.http.post('http://localhost:3000/save-username', { contact: this.contact, username: this.username }).subscribe(() => {
+      this.http.post(this.chatService.Service_saveUsername, { contact: this.contact, username: this.username }).subscribe(() => {
         alert('✅ Username created successfully!');
         localStorage.setItem('username', this.username);
         this.validationMessage = '';  
         this.isValidUserId = false;
-        this.router.navigate(['/chat-list']);
+        if (window.innerWidth < 573) {
+            this.router.navigate(['/chat-list']);
+          } else {
+            this.router.navigate(['/chat']);
+          }
       }, (err) => {
         alert('Error saving username');
       });
@@ -105,7 +115,7 @@ export class LoginComponent {
     }
   
     // Format is valid — now check with backend
-    this.http.post<any>('http://localhost:3000/check-contact-exist', { contact: trimmedContact })
+    this.http.post<any>(this.chatService.Service_checkContactExist, { contact: trimmedContact })
       .subscribe(
         (res) => {
           if (res.exists) {
@@ -132,7 +142,7 @@ export class LoginComponent {
       return;
     }
   
-    this.http.post<any>('http://localhost:3000/check-username', { username: trimmedUsername }).subscribe(
+    this.http.post<any>(this.chatService.Service_checkUserName, { username: trimmedUsername }).subscribe(
       (res) => {
         if (res.exists) {
           this.validationMessage = 'Username is already taken. Please choose a unique name.';

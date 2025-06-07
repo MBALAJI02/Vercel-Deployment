@@ -3,6 +3,7 @@ import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { ChatService } from '../chat.service';
 
 @Component({
   selector: 'app-register',
@@ -19,52 +20,50 @@ export class RegisterComponent {
 
   constructor(
     private http: HttpClient,
-    private router: Router
+    private router: Router,
+    private chatService: ChatService
 
-  ) {}
+  ) { }
 
   registerationChangeAction() {
     this.isEmailMode = !this.isEmailMode;
   }
 
-  NextAction() {
+  nextAction() {
     console.log('Contact:', this.contact);
-  
-    // Check if we are not in OTP Mode  
+
     if (!this.isOTPMode) {
-      // Sending OTP to backend
-      this.http.post('http://localhost:3000/send-otp', { contact: this.contact }).subscribe(() => {
-        this.isOTPMode = true; // Switch to OTP mode on success
+      this.http.post(this.chatService.Service_sendOTP, { contact: this.contact }).subscribe(() => {
+        this.isOTPMode = true;
         alert('OTP sent to your contact! Please check your email or phone.');
       }, (err) => {
         if (err.status == 400 && err.error.message == 'User already registered') {
-          alert('⚠️ This contact is already registered. Please login instead.');
+          alert('This contact is already registered. Please login instead.');
         } else {
           console.error('Error sending OTP:', err);
-          alert('❌ There was an error sending OTP. Please try again!');
+          alert('Error sending OTP. Please try again!');
         }
       });
     } else {
-      // Verifying OTP when in OTP Mode
-      this.http.post('http://localhost:3000/verify-otp', { contact: this.contact, otp: this.otp }).subscribe(() => {
-        alert('✅ Verified successfully!');
-        this.router.navigate(['/login']); // Navigate to login page after successful verification
+      this.http.post(this.chatService.Service_verifyOTP, { contact: this.contact, otp: this.otp }).subscribe(() => {
+        alert('Verified successfully!');
+        this.router.navigate(['/login']);
       }, () => {
-        alert('❌ Invalid OTP! Please try again.');
+        alert('Invalid OTP! Please try again.');
       });
     }
   }
 
   isValidMobileNumber(number: string): boolean {
-    const mobileRegex = /^[6-9]\d{9}$/; // Adjust this if needed for international numbers
+    const mobileRegex = /^[6-9]\d{9}$/;
     return mobileRegex.test(number);
   }
-  
+
   isValidEmail(email: string): boolean {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
   }
-  
+
   isValidInput(): boolean {
     if (this.isOTPMode) {
       return this.otp.trim().length > 0;
@@ -74,25 +73,23 @@ export class RegisterComponent {
       return this.contact.trim().length > 0 && this.isValidMobileNumber(this.contact);
     }
   }
-  
-  
-  
 
-  BackAction() {
+
+  backAction() {
     this.isOTPMode = false;
   }
 
-  ResendOTP() {
-    this.http.post('http://localhost:3000/send-otp', { contact: this.contact }).subscribe(() => {
+  resendOTP() {
+    this.http.post(this.chatService.Service_sendOTP, { contact: this.contact }).subscribe(() => {
       alert('OTP has been resent. Please check your email or phone.');
     }, (err) => {
       console.error('Error resending OTP:', err);
-      alert('❌ Failed to resend OTP. Please try again!');
+      alert('Failed to resend OTP. Please try again!');
     });
   }
-  
-  
-  backNavigationAction(){
+
+
+  backNavigationAction() {
     this.router.navigate(['/login']);
   }
 

@@ -1,4 +1,4 @@
-import { AfterViewChecked, Component, ElementRef, ViewChild } from '@angular/core';
+import { AfterViewChecked, Component, ElementRef, Input, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -7,9 +7,11 @@ import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { MenuModule } from 'primeng/menu';
 import { MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
+import { WebsocketService } from '../websocket.service';
+import { ChatService } from '../chat.service';
 
 @Component({
-  selector: 'app-chat-conversation',
+  selector: 'app-chat-converstation',
   standalone: true,
   imports: [CommonModule, FormsModule, HttpClientModule, MenuModule, ButtonModule],
   templateUrl: './chat-converstation.component.html',
@@ -18,12 +20,13 @@ import { ButtonModule } from 'primeng/button';
 export class ChatConverstationComponent implements AfterViewChecked {
   @ViewChild('scrollMe') private scrollContainer!: ElementRef;
 
-  username: string = '';
+  @Input() username: string = '';
   messages: { text: string; sender: 'user' | 'bot'; time: string }[] = [];
   newMessage = '';
   isTyping = false;
   menuVisible = false;
   menuItems: MenuItem[] = [];
+  isMobileView: boolean = window.innerWidth < 573;
 
   private socket!: Socket;
   private currentUser: string | null = localStorage.getItem('username');
@@ -31,13 +34,15 @@ export class ChatConverstationComponent implements AfterViewChecked {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private http: HttpClient
+    private http: HttpClient,
+    private chatService: ChatService,
+    private webSocket: WebsocketService
   ) {
   }
 
   ngOnInit() {
-    this.username = this.route.snapshot.paramMap.get('id') || '';
-    this.socket = io('http://localhost:4000');
+    if (this.isMobileView) { this.username = this.route.snapshot.paramMap.get('id') || ''; }
+    this.socket = io(this.webSocket.socket_connection);
 
     if (this.currentUser) {
       this.socket.emit('join', this.currentUser);
@@ -58,13 +63,13 @@ export class ChatConverstationComponent implements AfterViewChecked {
 
     this.fetchUserMessage();
     this.liveTypingUpdate();
-    this.menuDropDownAction();  
+    this.menuDropDownAction();
 
   }
 
   fetchUserMessage() {
     // Fetch chat messages from the DB
-    this.http.get<any[]>(`http://localhost:3000/get-messages/${this.currentUser}/${this.username}`)
+    this.http.get<any[]>(`${this.chatService.Service_getMessages}/`+`${this.currentUser}/${this.username}`)
       .subscribe(
         data => {
           this.messages = data.map(msg => ({
@@ -89,7 +94,7 @@ export class ChatConverstationComponent implements AfterViewChecked {
     });
   }
 
-  ngAfterViewChecked() {    
+  ngAfterViewChecked() {
     this.scrollToBottom()
   }
 
@@ -101,10 +106,10 @@ export class ChatConverstationComponent implements AfterViewChecked {
 
   autoResize(event: Event): void {
     const textarea = event.target as HTMLTextAreaElement;
-    textarea.style.height = 'auto'; // Reset height
-    textarea.style.height = Math.min(textarea.scrollHeight, 100) + 'px'; // Max 4 lines (approx 100px)
+    textarea.style.height = 'auto';
+    textarea.style.height = Math.min(textarea.scrollHeight, 100) + 'px';
   }
-  
+
 
   sendMessage(textarea: HTMLTextAreaElement) {
     const currentUser = this.currentUser;
@@ -124,7 +129,7 @@ export class ChatConverstationComponent implements AfterViewChecked {
 
     this.messages = [...this.messages, { text: this.newMessage, sender: 'user', time: currentTime }];
 
-    this.http.post('http://localhost:3000/send-message', {
+    this.http.post(this.chatService.Service_sendMessage, {
       from: currentUser,
       to: this.username,
       message: this.newMessage
@@ -177,13 +182,13 @@ export class ChatConverstationComponent implements AfterViewChecked {
 
   viewContact() {
     console.log('View Contact clicked');
-    // Show modal or navigate
+    
   }
 
   clearChat() {
     if (!this.currentUser || !this.username) return;
 
-    this.http.delete(`http://localhost:3000/clear-message/${this.currentUser}/${this.username}`, {
+    this.http.delete(`${this.chatService.Service_clearMessages}/`+`${this.currentUser}/${this.username}`, {
       responseType: 'text'
     }).subscribe(
       () => {
@@ -198,22 +203,24 @@ export class ChatConverstationComponent implements AfterViewChecked {
 
   blockContact() {
     console.log('Blocked contact');
-    // Block logic
+  
   }
 
-  deleteContact() {   
+  deleteContact() {
 
   }
 
   showMoreOptions() {
     console.log('More options clicked');
-    // Additional actions
+    
   }
 
 
 
   backAction() {
-    this.router.navigate(['/chat-list']);
+    if (window.innerWidth < 573) {
+      this.router.navigate(['/chat-list']);
+    }
   }
 
 

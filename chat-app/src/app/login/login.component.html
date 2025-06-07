@@ -1,4 +1,4 @@
-<div class="login-container">
+<div class="login-container blurred-bg">
   <h3 style="text-align: center; color: white;">Login</h3>
 
   <div *ngIf="!isEmailMode && !isUserNameMode" class="mobile-num">
@@ -27,7 +27,7 @@
     <input type="text" [(ngModel)]="contact" placeholder="Email Id"
       (input)="validateContact()"
       style="padding: 5px; outline: none;">
-    <!-- For email -->
+      
     <div *ngIf="validationMessage"
       [ngStyle]="{ color: isValidUserId ? 'green' : 'red' }"
       style="font-size: 15px; margin-top: 5px;"> {{ validationMessage }}</div>

@@ -25,11 +25,11 @@
     <input *ngIf="isOTPMode" type="text" [(ngModel)]="otp" style="padding: 5px;">
     <div *ngIf="isOTPMode && !otp" style="color: red; font-size: 15px;">OTP is required.</div>
 
-    <button class="next-btn" [disabled]="!isValidInput()" (click)= "NextAction()">Next</button>
+    <button class="next-btn" [disabled]="!isValidInput()" (click)= "nextAction()">Next</button>
 
     <div *ngIf="isOTPMode" style="display: flex; gap: 5px; margin: 0 auto;">
-        <button class="back-btn" (click)="BackAction()">Back</button>
-        <button class="resentOtp-btn" (click)="ResendOTP()">Resend OTP</button>
+        <button class="back-btn" (click)="backAction()">Back</button>
+        <button class="resentOtp-btn" (click)="resendOTP()">Resend OTP</button>
     </div>
     <span *ngIf="!isOTPMode" style="cursor: pointer; width: 150px; margin: 0 auto;" (click)= "registerationChangeAction()">or Register with {{ isEmailMode ? 'Mobile' : 'Email' }}</span>
     <button *ngIf="!isOTPMode" class="BackButton" style="width: 50px; margin:0 auto; background-color:  rgb(96, 96, 96);" (click)="backNavigationAction()">Back</button>

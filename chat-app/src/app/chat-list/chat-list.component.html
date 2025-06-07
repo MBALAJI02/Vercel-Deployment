@@ -1,10 +1,10 @@
 <div class="chat-list-container">
-  <h3 style="margin: 10px;">Chat-App</h3>
+  <h3 style="margin: 10px;color: white;"><b>E</b>lite</h3>
 
   <div *ngIf="username"
     style="display: flex; align-items: center; justify-content: space-between; margin: 0px 20px;">
-    <span>Welcome <b>{{ username }}</b></span>
-    <button (click)="logout()" class="logout" style="margin-left: 10px;"><i class="fas fa-sign-out-alt"></i></button>
+    <span style="color: white;">Welcome <b>{{ username }}</b></span>
+    <button (click)="logout()" class="logout" style="margin-left: 10px; padding: 1px 5px;"><i class="fas fa-sign-out-alt"></i></button>
   </div>
   
   <div *ngIf="!showSearchInput" class="search-bar">
@@ -15,16 +15,14 @@
   <!-- Users list -->
   <div *ngIf="!showSearchInput" style="overflow: scroll; scrollbar-width: none;">
     <div *ngIf="users.length > 0; else noChats" class="user-list-container">
-      <div *ngFor="let user of users" (click)="openConversation(user)" style="display: flex; flex-direction: row; position: relative;">
-        <img src="https://img.freepik.com/free-vector/blue-circle-with-white-user_78370-4707.jpg?semt=ais_hybrid&w=740"
+      <div *ngFor="let user of users" (click)="openConversation(user)" style="display: flex; flex-direction: row; position: relative;">        
+        <img src="assets/Contacts.png"
         alt="Contact" width="40px" height="40px" style="border-radius: 50%;" />
-        <!-- <img src="assets/Contacts.png"
-        alt="Contact" width="40px" height="40px" style="border-radius: 50%;" /> -->
-        <span>{{ user }}</span>
+        <span style="color: white;">{{ user }}</span>
         <p *ngIf="typingStatus[user]" style="font-size: 13px; color: green; position: absolute; left: 19%; top: 30%;">Typing...</p>
         <p *ngIf="!typingStatus[user]" class="latest-message">{{ getLastMessage(user) }}</p>
         <span *ngIf="getUnreadCount(user) > 0" class="unread-badge">{{ getUnreadCount(user) }}</span>
-        <span class="date-time"  [ngStyle]="{ 'color': getUnreadCount(user) > 0 ? 'rgb(77, 176, 77)' : 'black', 'font-weight': getUnreadCount(user) > 0 ? 'bold' : 'normal' }">
+        <span class="date-time"  [ngStyle]="{ 'color': getUnreadCount(user) > 0 ? 'rgb(77, 176, 77)' : 'white', 'font-weight': getUnreadCount(user) > 0 ? 'bold' : 'normal' }">
         {{ getMessageTime (user) | date: 'shortTime'  }}</span>  
       </div>
     </div>
@@ -34,9 +32,9 @@
   </div>
 
   <div *ngIf="!showSearchInput" (click)="addUserAction()"
-    style="font-size: 17px; background-color: rgb(154, 175, 193); width: 30px; padding:5px; border-radius: 10px; position: absolute; bottom: 60px; right: 20px; cursor: pointer;">
+    style="font-size: 17px; background-color: rgb(48, 48, 48); width: 30px; padding:5px; border-radius: 10px; position: absolute; bottom: 60px; right: 20px; cursor: pointer;">
     <span
-      style="font-weight: bold; margin-left: 7px; color: white;"><i class="fa fa-plus"></i></span>
+      style="font-weight: bold; margin-left: 3px; color: white;"><i class="fa fa-plus"></i></span>
   </div>
 
   <div *ngIf="showSearchInput" class="search-bar">
