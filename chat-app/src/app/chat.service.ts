@@ -6,7 +6,8 @@ import { Injectable } from '@angular/core';
 
 export class ChatService {
 
-  public reqUrl = 'http://localhost:3000'  
+  // public reqUrl = 'http://localhost:3000'  
+  public reqUrl = 'https://chat-app-server-eight-sepia.vercel.app'  
 
   //Register
   public Service_sendOTP = this.reqUrl + '/send-otp'
