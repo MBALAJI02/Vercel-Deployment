@@ -9,7 +9,8 @@
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "/chat-app/dist/chat-app/index.html"
+      "dest": "/index.html"
     }
-  ]
+  ],
+  "rootDirectory": "chat-app"
 }
