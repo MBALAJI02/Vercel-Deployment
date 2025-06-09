@@ -337,3 +337,7 @@ app.post('/mark-messages-read', async (req, res) => {
 
 
 app.listen(PORT, () => console.log('Server running on http://localhost:3000'));
+
+app.get('/', (req, res) => {
+  res.send('✅ OTP Backend is up and running!');
+});
